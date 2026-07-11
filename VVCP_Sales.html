@@ -3,212 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#e60012">
     <title>維港灣畔 (車位) - 報數系統</title>
+    <link rel="stylesheet" href="./style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* 新版中國海外 (COHL) 企業美學 CSS */
-        :root {
-            --cohl-blue: #00387b; /* 企業深藍 */
-            --cohl-gold: #c4a661; /* 典雅香檳金 */
-            --bg-color: #f5f7fa; /* 淺灰背景 */
-            --card-bg: #ffffff; /* 純白卡片 */
-            --text-main: #222222;
-            --text-muted: #666666;
-            --border-color: #e5e9f0;
+        .hero-header {
+            background-image: 
+                linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 55%, transparent 85%),
+                url('維港·灣畔.jpg');
         }
-        * { box-sizing: border-box; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-        body { margin: 0; padding: 20px 15px; background: var(--bg-color); color: var(--text-main); -webkit-overflow-scrolling: touch; min-height: 100vh; }
-        
-        .container { background: var(--card-bg); border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 56, 123, 0.08); max-width: 850px; margin: 0 auto; overflow: hidden; border: 1px solid rgba(0, 56, 123, 0.05); }
-        .header { background: var(--cohl-blue); color: #fff; padding: 35px 20px; text-align: center; border-bottom: 4px solid var(--cohl-gold); position: relative; background-image: linear-gradient(135deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.03) 75%, transparent 75%, transparent); background-size: 40px 40px; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: 2px; }
-        .save-indicator { position: absolute; top: 15px; right: 20px; font-size: 11px; background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; color: #fff; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); letter-spacing: 1px; }
-        
-        .content { padding: 30px 25px; }
-        .section-title { font-size: 17px; color: var(--cohl-blue); font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; letter-spacing: 1px; }
-        .section-title::before { content: ''; width: 5px; height: 18px; background: var(--cohl-gold); margin-right: 12px; border-radius: 2px; display: inline-block; }
-        
-        .card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 25px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); transition: all 0.3s ease; }
-        .card:hover { box-shadow: 0 8px 30px rgba(0, 56, 123, 0.08); transform: translateY(-2px); }
-        
-        @keyframes pulse-highlight { 0% { background-color: #f8fafd; border-color: var(--cohl-blue); } 100% { background-color: transparent; border-color: var(--border-color); } }
-        .bounce-alert { animation: pulse-highlight 1.5s ease-out; border: 2px solid var(--cohl-gold) !important; box-shadow: 0 8px 25px rgba(196, 166, 97, 0.2) !important; }
-
-        .id-mapping { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top:15px; }
-        .id-mapping div { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
-        .id-mapping input { margin-top: 0; padding: 8px; font-size: 13px; }
-        .custom-new-id { animation: pulse-highlight 2s ease-out forwards; border: 1px dashed var(--cohl-gold); border-radius: 6px; padding: 6px; }
-
-        select, input { padding: 12px 15px; width: 100%; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; margin-top: 5px; background: #fcfcfd; transition: all 0.3s; color: var(--text-main); }
-        select:focus, input:focus { outline: none; border-color: var(--cohl-blue); box-shadow: 0 0 0 3px rgba(0, 56, 123, 0.1); background: #fff; }
-        textarea { width: 100%; padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; resize: vertical; background-color: #fcfcfd; color: var(--text-main); line-height: 1.6; transition: all 0.3s; }
-        textarea:focus { outline: none; border-color: var(--cohl-blue); background: #fff; }
-        
-        .btn { background: var(--cohl-blue); color: #fff; border: none; padding: 14px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%; margin-bottom: 15px; letter-spacing: 1px; transition: all 0.3s; }
-        .btn:hover { background: #00285a; box-shadow: 0 6px 18px rgba(0, 56, 123, 0.25); transform: translateY(-1px); }
-        
-        .editor-row { background: #f8fafd; border-left: 4px solid var(--border-color); padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 15px; transition: all 0.3s; }
-        .editor-row:hover { border-left-color: var(--cohl-gold); background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
-        
-        /* 針對多檔案上傳區塊 */
-        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .upload-box { border: 2px dashed #d1d5db; padding: 25px 15px; border-radius: 8px; text-align: center; background: #fafafa; transition: all 0.3s; cursor: pointer; }
-        .upload-box:hover { border-color: var(--cohl-blue); background: #f0f4f8; }
-        .upload-box label { font-size: 14px; font-weight: 600; color: var(--cohl-blue); display: block; margin-bottom: 8px; }
-        .upload-box input { font-size: 12px; padding: 0; border: none; background: transparent; width: 100%; color: var(--text-muted); cursor: pointer; }
-        .upload-box.has-data { border: 2px solid var(--cohl-gold); background: rgba(196, 166, 97, 0.05); }
-        
-        @media (max-width: 600px) { .upload-grid, .id-mapping, .grid-2 { grid-template-columns: 1fr; } .editor-row > div { grid-template-columns: 1fr 1fr !important; } }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header"><h1>⛴️ 維港灣畔車位 (VVCP)</h1></div>
-    <div class="content">
-        <div class="card">
-            <div class="section-title">1. 上傳總表 (VVCPPropertySales.xlsx)</div>
-            <input type="file" id="excel-file" accept=".xlsx, .xls, .csv">
+
+    <nav class="top-nav">
+        <a href="./index.html" class="logo">
+            <img src="./cohl-logo.png" alt="CHINA OVERSEAS Logo">
+            <span class="logo-text">CHINA OVERSEAS <small>Sales System</small></span>
+        </a>
+        <div class="nav-links">
+            <a href="./index.html">主頁</a>
+            
+            <div class="dropdown">
+                <span class="dropdown-toggle">住宅</span>
+                <div class="dropdown-menu">
+                    <a href="./V1_Sales.html">維港1號</a>
+                    <a href="./VD_Sales.html">維港雙鑽</a>
+                    <a href="./VV_Sales.html">維港灣畔</a>
+                </div>
+            </div>
+            
+            <div class="dropdown active">
+                <span class="dropdown-toggle">車位</span>
+                <div class="dropdown-menu">
+                    <a href="./OVCP_Sales.html">維港1號車位</a>
+                    <a href="./TVCP_Sales.html">維港雙鑽車位</a>
+                    <a href="./VVCP_Sales.html" class="active-drop">維港灣畔車位</a>
+                </div>
+            </div>
+            
+            <a href="./hr_management.html">人力資源</a>
         </div>
-        <div class="card" id="filter-sec" style="display:none;">
-            <label>合約日期 (B欄)：</label><select id="date-select" onchange="processData()"></select>
+        <button class="theme-toggle" id="themeToggle" aria-label="切換深色模式">
+            <span id="themeIcon">🌙</span>
+            <span class="toggle-label" id="themeLabel">深色</span>
+        </button>
+    </nav>
+
+    <div class="container">
+        <div class="hero-header">
+            <span class="project-tag">CHINA OVERSEAS</span>
+            <div class="header-content">
+                <h1>維港灣畔車位 <small>VVCP</small></h1>
+                <div class="save-indicator" id="save-ind">● 已準備</div>
+            </div>
         </div>
-        <div class="card" id="editor-sec" style="display:none;">
-            <div class="section-title">2. 車位買家單位及佣金補錄</div>
-            <div id="editor-container"></div>
+
+        <div class="content">
+            <div class="card">
+                <div class="section-title">
+                    <span>1. 上傳總表 (VVCPPropertySales.xlsx)</span>
+                    <span class="save-status" id="upload-status-vvcp">📎 未上傳</span>
+                </div>
+                <input type="file" id="excel-file" accept=".xlsx, .xls, .csv">
+            </div>
+            <div class="card" id="filter-sec" style="display:none;">
+                <label>合約日期 (B欄)：</label><select id="date-select" onchange="processData()"></select>
+            </div>
+            <div class="card" id="editor-sec" style="display:none;">
+                <div class="section-title">2. 車位買家單位及佣金補錄</div>
+                <div id="editor-container"></div>
+            </div>
+            <div id="output-sec" style="display:none;">
+                <div class="card"><div class="section-title">格仔一：當日明細</div><button class="btn" onclick="copy('out1')">複製</button><textarea id="out1" readonly></textarea></div>
+                <div class="card"><div class="section-title">格仔二：銷情數據</div><button class="btn" onclick="copy('out2')">複製</button><textarea id="out2" style="height:350px;" readonly></textarea></div>
+            </div>
         </div>
-        <div id="output-sec" style="display:none;">
-            <div class="card"><div class="section-title">格仔一：當日明細</div><button class="btn" onclick="copy('out1')">複製</button><textarea id="out1" readonly></textarea></div>
-            <div class="card"><div class="section-title">格仔二：銷情數據</div><button class="btn" onclick="copy('out2')">複製</button><textarea id="out2" style="height:350px;" readonly></textarea></div>
-        </div>
+
+        <footer class="footer" style="margin-top:0; border-top:1px solid var(--cohl-border);">
+            <div class="footer-inner">
+                <div class="footer-links">
+                    <a href="./index.html">主頁</a>
+                    <a href="https://www.cohl.com/en/" target="_blank">官方網站</a>
+                </div>
+                <div class="footer-copy">© 2026 CHINA OVERSEAS HOLDINGS LIMITED.</div>
+            </div>
+        </footer>
     </div>
-</div>
-<script>
-    let allDeals = [], currentDeals = [], savedSettings = {};
-    const COL = { dt: 1, cp: 19, amt: 21, ag: 36, br: 39 }; // VVCP columns
 
-    window.onload = () => {
-        if(localStorage.getItem('vvcp_data')) {
-            allDeals = JSON.parse(localStorage.getItem('vvcp_data'));
-            savedSettings = JSON.parse(localStorage.getItem('vvcp_set') || '{}');
-            popDates();
+    <script>
+        let allDeals = [], currentDeals = [], savedSettings = {};
+        const COL = { dt: 1, cp: 19, amt: 21, ag: 36, br: 39 };
+
+        function updateUploadStatus(message, isSaved) {
+            const el = document.getElementById('upload-status-vvcp');
+            if (el) {
+                el.textContent = message;
+                el.className = 'save-status' + (isSaved ? ' saved' : '');
+            }
         }
-    };
 
-    function save() {
-        localStorage.setItem('vvcp_data', JSON.stringify(allDeals));
-        localStorage.setItem('vvcp_set', JSON.stringify(savedSettings));
-    }
-
-    document.getElementById('excel-file').addEventListener('change', e => {
-        let reader = new FileReader();
-        reader.onload = ev => {
-            let json = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(ev.target.result), {type: 'array'}).Sheets[XLSX.read(new Uint8Array(ev.target.result), {type: 'array'}).SheetNames[0]], {header: 1, defval: ""});
-            allDeals = [];
-            for(let i=1; i<json.length; i++) {
-                if(!json[i][1] || String(json[i][1]).includes("累售")) break;
-                let r = [];
-                [COL.dt, COL.cp, COL.amt, COL.ag, COL.br].forEach(idx => r[idx] = json[i][idx]);
-                allDeals.push(r);
+        window.onload = () => {
+            if(localStorage.getItem('vvcp_data')) {
+                allDeals = JSON.parse(localStorage.getItem('vvcp_data'));
+                savedSettings = JSON.parse(localStorage.getItem('vvcp_set') || '{}');
+                updateUploadStatus('● 已載入 ' + allDeals.length + ' 筆記錄', true);
+                popDates();
             }
-            popDates(); save();
         };
-        reader.readAsArrayBuffer(e.target.files[0]);
-    });
 
-    function parseDate(v) {
-        if(typeof v === 'number') return new Date(Math.round((v-25569)*86400*1000)).toISOString().split('T')[0];
-        let p = String(v).split(/[-/]/);
-        if(p.length===3) return p[2].length===4 ? `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` : `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
-        return v;
-    }
+        function save() {
+            localStorage.setItem('vvcp_data', JSON.stringify(allDeals));
+            localStorage.setItem('vvcp_set', JSON.stringify(savedSettings));
+            updateUploadStatus('● 已儲存 ' + allDeals.length + ' 筆記錄', true);
+        }
 
-    function popDates() {
-        let s = new Set();
-        allDeals.forEach(r => { r.pDate = parseDate(r[COL.dt]); if(r.pDate) s.add(r.pDate); });
-        let sel = document.getElementById('date-select'); sel.innerHTML = "";
-        Array.from(s).sort().reverse().forEach(d => sel.add(new Option(d, d)));
-        document.getElementById('filter-sec').style.display = 'block';
-        processData();
-    }
-
-    function updateSet(id, k, v) { if(!savedSettings[id]) savedSettings[id]={u:"", c:"1%"}; savedSettings[id][k]=v; gen(); }
-
-    function processData() {
-        let d = document.getElementById('date-select').value; if(!d) return;
-        currentDeals = allDeals.filter(r => r.pDate === d);
-        let h = "";
-        currentDeals.forEach(r => {
-            let cpNum = String(r[COL.cp]).trim();
-            let s = savedSettings[cpNum] || {u:"", c:"1%"};
-            h += `<div class="editor-row"><b>車位：${cpNum}</b>
-            <div class="grid-2">
-                <div><label style="font-size:12px;">住宅單位 (例: T1A-20B)</label><input type="text" value="${s.u}" placeholder="請填寫單位" onchange="updateSet('${cpNum}','u',this.value)"></div>
-                <div><label style="font-size:12px;">佣金</label><input type="text" value="${s.c}" placeholder="例: 1%" onchange="updateSet('${cpNum}','c',this.value)"></div>
-            </div></div>`;
-        });
-        document.getElementById('editor-container').innerHTML = h;
-        document.getElementById('editor-sec').style.display = currentDeals.length ? 'block' : 'none';
-        gen();
-    }
-
-    function isMoto(num) { return String(num).trim().toUpperCase().startsWith('M'); }
-
-    function gen() {
-        let sd = document.getElementById('date-select').value; if(!sd) return;
-        let dobj = new Date(sd), w = isNaN(dobj)?"日":["日","一","二","三","四","五","六"][dobj.getDay()];
-        let shortD = parseInt(sd.split('-')[2]) + '/' + parseInt(sd.split('-')[1]) + '/' + sd.split('-')[0];
-        
-        let st = { today: {p:0, m:0}, yrs: {}, totalAmt: 0 };
-        
-        allDeals.forEach(r => {
-            let yr = r.pDate ? r.pDate.split('-')[0] : "";
-            let cp = String(r[COL.cp]).trim();
-            let amt = parseFloat(String(r[COL.amt]).replace(/,/g,'')) || 0;
-            let m = isMoto(cp);
-            
-            if(!st.yrs[yr]) st.yrs[yr] = { p:0, pA:0, m:0, mA:0 };
-            
-            if(r.pDate === sd) { if(m) st.today.m++; else st.today.p++; }
-            
-            if(m) { st.yrs[yr].m++; st.yrs[yr].mA += amt; } 
-            else { st.yrs[yr].p++; st.yrs[yr].pA += amt; }
-            st.totalAmt += amt;
+        document.getElementById('excel-file').addEventListener('change', e => {
+            let reader = new FileReader();
+            reader.onload = ev => {
+                let json = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(ev.target.result), {type: 'array'}).Sheets[XLSX.read(new Uint8Array(ev.target.result), {type: 'array'}).SheetNames[0]], {header: 1, defval: ""});
+                allDeals = [];
+                for(let i=1; i<json.length; i++) {
+                    if(!json[i][1] || String(json[i][1]).includes("累售")) break;
+                    let r = [];
+                    [COL.dt, COL.cp, COL.amt, COL.ag, COL.br].forEach(idx => r[idx] = json[i][idx]);
+                    allDeals.push(r);
+                }
+                updateUploadStatus('● 已載入 ' + allDeals.length + ' 筆記錄', true);
+                save();
+                popDates();
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
         });
 
-        // Block 1
-        let m1 = `維港·灣畔 車位開單 (${shortD}) (${w})\n\n`;
-        let emojis = ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
-        
-        currentDeals.forEach((r, i) => {
-            let cp = String(r[COL.cp]).trim();
-            let s = savedSettings[cp] || {u:"", c:"1%"};
-            let type = isMoto(cp) ? "電單車位" : "私家車位";
-            let amt = parseFloat(String(r[COL.amt]).replace(/,/g,'')) || 0;
-            let ag = String(r[COL.ag] || "").trim();
-            let br = String(r[COL.br] || "").trim();
-            let emo = i < emojis.length ? emojis[i] : `${i+1}️⃣`;
-            
-            // 灣畔車位格式：冇付款辦法，且單位後緊接車位號碼（如 169私家車位）
-            m1 += `${emo}${s.u}業主選購${cp}${type}\n合額：$${amt.toLocaleString('en-US')}\n代理：${ag} ${br}\n佣金：${s.c}\n\n`;
-        });
+        function parseDate(v) {
+            if(typeof v === 'number') return new Date(Math.round((v-25569)*86400*1000)).toISOString().split('T')[0];
+            let p = String(v).split(/[-/]/);
+            if(p.length===3) return p[2].length===4 ? `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` : `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
+            return v;
+        }
 
-        // Block 2
-        let m2 = `維港•灣畔是日累售：\n${st.today.p}個私家車位\n${st.today.m}個電單車位\n\n`;
-        Object.keys(st.yrs).sort().forEach(yr => {
-            let d = st.yrs[yr];
-            if(d.p > 0 || d.m > 0) {
-                m2 += `${yr}年累售：\n私家車位：${d.p}個\n合約額：$${d.pA.toLocaleString('en-US')}\n電單車位：${d.m}個\n合約額：$${d.mA.toLocaleString('en-US')}\n`;
+        function popDates() {
+            let s = new Set();
+            allDeals.forEach(r => { r.pDate = parseDate(r[COL.dt]); if(r.pDate) s.add(r.pDate); });
+            let sel = document.getElementById('date-select'); sel.innerHTML = "";
+            Array.from(s).sort().reverse().forEach(d => sel.add(new Option(d, d)));
+            document.getElementById('filter-sec').style.display = 'block';
+            processData();
+        }
+
+        function updateSet(id, k, v) { if(!savedSettings[id]) savedSettings[id]={u:"", c:"1%"}; savedSettings[id][k]=v; gen(); }
+
+        function processData() {
+            let d = document.getElementById('date-select').value; if(!d) return;
+            currentDeals = allDeals.filter(r => r.pDate === d);
+            let h = "";
+            currentDeals.forEach(r => {
+                let cpNum = String(r[COL.cp]).trim();
+                let s = savedSettings[cpNum] || {u:"", c:"1%"};
+                h += `<div class="editor-row"><b>車位：${cpNum}</b>
+                <div class="grid-2">
+                    <div><label style="font-size:12px;">住宅單位 (例: T1A-20B)</label><input type="text" value="${s.u}" placeholder="請填寫單位" onchange="updateSet('${cpNum}','u',this.value)"></div>
+                    <div><label style="font-size:12px;">佣金</label><input type="text" value="${s.c}" placeholder="例: 1%" onchange="updateSet('${cpNum}','c',this.value)"></div>
+                </div></div>`;
+            });
+            document.getElementById('editor-container').innerHTML = h;
+            document.getElementById('editor-sec').style.display = currentDeals.length ? 'block' : 'none';
+            gen();
+        }
+
+        function isMoto(num) { return String(num).trim().toUpperCase().startsWith('M'); }
+
+        function gen() {
+            let sd = document.getElementById('date-select').value; if(!sd) return;
+            let dobj = new Date(sd), w = isNaN(dobj)?"日":["日","一","二","三","四","五","六"][dobj.getDay()];
+            let shortD = parseInt(sd.split('-')[2]) + '/' + parseInt(sd.split('-')[1]) + '/' + sd.split('-')[0];
+            
+            let st = { today: {p:0, m:0}, yrs: {}, totalAmt: 0 };
+            
+            allDeals.forEach(r => {
+                let yr = r.pDate ? r.pDate.split('-')[0] : "";
+                let cp = String(r[COL.cp]).trim();
+                let amt = parseFloat(String(r[COL.amt]).replace(/,/g,'')) || 0;
+                let m = isMoto(cp);
+                
+                if(!st.yrs[yr]) st.yrs[yr] = { p:0, pA:0, m:0, mA:0 };
+                
+                if(r.pDate === sd) { if(m) st.today.m++; else st.today.p++; }
+                
+                if(m) { st.yrs[yr].m++; st.yrs[yr].mA += amt; } 
+                else { st.yrs[yr].p++; st.yrs[yr].pA += amt; }
+                st.totalAmt += amt;
+            });
+
+            let m1 = `維港·灣畔 車位開單 (${shortD}) (${w})\n\n`;
+            let emojis = ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
+            
+            currentDeals.forEach((r, i) => {
+                let cp = String(r[COL.cp]).trim();
+                let s = savedSettings[cp] || {u:"", c:"1%"};
+                let type = isMoto(cp) ? "電單車位" : "私家車位";
+                let amt = parseFloat(String(r[COL.amt]).replace(/,/g,'')) || 0;
+                let ag = String(r[COL.ag] || "").trim();
+                let br = String(r[COL.br] || "").trim();
+                let emo = i < emojis.length ? emojis[i] : `${i+1}️⃣`;
+                
+                m1 += `${emo}${s.u}業主選購${cp}${type}\n合額：$${amt.toLocaleString('en-US')}\n代理：${ag} ${br}\n佣金：${s.c}\n\n`;
+            });
+
+            let m2 = `維港•灣畔是日累售：\n${st.today.p}個私家車位\n${st.today.m}個電單車位\n\n`;
+            Object.keys(st.yrs).sort().forEach(yr => {
+                let d = st.yrs[yr];
+                if(d.p > 0 || d.m > 0) {
+                    m2 += `${yr}年累售：\n私家車位：${d.p}個\n合約額：$${d.pA.toLocaleString('en-US')}\n電單車位：${d.m}個\n合約額：$${d.mA.toLocaleString('en-US')}\n`;
+                }
+            });
+            m2 += `總合約額：$${st.totalAmt.toLocaleString('en-US')}`;
+
+            document.getElementById('out1').value = m1.trim();
+            document.getElementById('out2').value = m2.trim();
+            document.getElementById('output-sec').style.display = 'block';
+            save();
+        }
+        function copy(id) { document.getElementById(id).select(); document.execCommand('copy'); alert('✅ 已複製！'); }
+
+        (function() {
+            const toggle = document.getElementById('themeToggle');
+            const icon = document.getElementById('themeIcon');
+            const label = document.getElementById('themeLabel');
+            const html = document.documentElement;
+
+            const savedTheme = localStorage.getItem('cohl-theme');
+            if (savedTheme === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+                icon.textContent = '☀️';
+                label.textContent = '淺色';
             }
-        });
-        m2 += `總合約額：$${st.totalAmt.toLocaleString('en-US')}`;
 
-        document.getElementById('out1').value = m1.trim();
-        document.getElementById('out2').value = m2.trim();
-        document.getElementById('output-sec').style.display = 'block';
-        save();
-    }
-    function copy(id) { document.getElementById(id).select(); document.execCommand('copy'); alert('✅ 已複製！'); }
-</script>
+            toggle.addEventListener('click', function() {
+                const isDark = html.getAttribute('data-theme') === 'dark';
+                if (isDark) {
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('cohl-theme', 'light');
+                    icon.textContent = '🌙';
+                    label.textContent = '深色';
+                } else {
+                    html.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('cohl-theme', 'dark');
+                    icon.textContent = '☀️';
+                    label.textContent = '淺色';
+                }
+            });
+        })();
+
+        document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                var parent = this.closest('.dropdown');
+                if (parent) {
+                    parent.classList.toggle('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1,6 +1,8 @@
-const CACHE_NAME = 'cohl-sales-tech-v6';
+const CACHE_NAME = 'cohl-sales-tech-v8';
 const ASSETS_TO_CACHE = [
   './index.html',
+  './style.css',
+  './hr_management.html',
   './VD_Sales.html',
   './V1_Sales.html',
   './VV_Sales.html',
@@ -8,7 +10,8 @@ const ASSETS_TO_CACHE = [
   './TVCP_Sales.html',
   './VVCP_Sales.html',
   './manifest.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js'
 ];
 
 self.addEventListener('install', event => {
