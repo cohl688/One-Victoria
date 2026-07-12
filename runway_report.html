@@ -12,7 +12,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <title>跑道區成交 - 報數系統</title>
     <style>
-        /* 跑道區成交頁面專屬樣式（已整合至 style.css，但保留少量覆蓋） */
         .runway-container .upload-box {
             border: 2px dashed var(--cohl-border);
             padding: 18px 12px;
@@ -74,6 +73,40 @@
         .runway-container .btn-reset:hover {
             background: #c9302c;
         }
+        .runway-container .btn-fix-db {
+            background: #f0ad4e;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-left: 8px;
+            transition: all 0.3s ease;
+        }
+        .runway-container .btn-fix-db:hover {
+            background: #ec971f;
+        }
+        .runway-container .db-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 3px;
+            margin-top: 4px;
+        }
+        .runway-container .db-status.error {
+            color: #d9534f;
+            background: rgba(217, 83, 79, 0.1);
+        }
+        .runway-container .db-status.success {
+            color: #2da44e;
+            background: rgba(45, 164, 78, 0.1);
+        }
+        .runway-container .db-status.warning {
+            color: #f0ad4e;
+            background: rgba(240, 173, 78, 0.1);
+        }
         @media (max-width: 480px) {
             .runway-container .upload-box {
                 padding: 14px 10px;
@@ -81,6 +114,10 @@
             .runway-container .upload-box input[type="file"] {
                 font-size: 14px;
                 padding: 8px 0;
+            }
+            .runway-container .btn-fix-db {
+                margin-left: 0;
+                margin-top: 6px;
             }
         }
     </style>
@@ -137,11 +174,15 @@
                 <span>📂 Flat Mix 數據庫</span>
                 <span class="save-status" id="flatMixStatus">📎 未上傳</span>
             </div>
+            <div id="dbStatus" class="db-status warning">⏳ 檢查數據庫狀態...</div>
             <div class="upload-box" id="flatMixUploadBox">
                 <label>首次設定：上載跑道區 Flat Mix Excel</label>
                 <input type="file" id="flatMixFile" accept=".xlsx, .xls">
             </div>
-            <button class="btn-reset" id="resetFlatMixBtn" onclick="resetFlatMix()" style="display:none;">🔄 清除數據並重新上載</button>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+                <button class="btn-reset" id="resetFlatMixBtn" onclick="resetFlatMix()" style="display:none;">🔄 清除數據重新上載</button>
+                <button class="btn-fix-db" onclick="fixDatabase()">🔧 修復數據庫</button>
+            </div>
             <div id="flatMixError" style="color:#d9534f; font-size:0.8em; margin-top:6px; display:none;"></div>
         </div>
 
@@ -174,18 +215,18 @@
 
     <script>
         // ==========================================
-        // IndexedDB 儲存（獨立但共用 DB）
+        // IndexedDB 儲存 - 統一版本管理
         // ==========================================
         const DB_NAME = "ColiAppDB";
         const STORE_FLATMIX = "FlatMixStore";
-        const DB_VERSION = 3;  // 同 hr_management 同步版本
+        const DB_VERSION = 4;  // 同 hr_management 同步
 
         function openDB() {
             return new Promise((resolve, reject) => {
                 const req = indexedDB.open(DB_NAME, DB_VERSION);
                 req.onupgradeneeded = (e) => {
                     const db = e.target.result;
-                    // 建立 FlatMixStore（如果不存在）
+                    // 建立 FlatMixStore
                     if (!db.objectStoreNames.contains(STORE_FLATMIX)) {
                         db.createObjectStore(STORE_FLATMIX, { keyPath: "id" });
                     }
@@ -195,6 +236,67 @@
             });
         }
 
+        // 檢查數據庫狀態
+        async function checkDBStatus() {
+            const statusEl = document.getElementById('dbStatus');
+            try {
+                const db = await openDB();
+                if (db.objectStoreNames.contains(STORE_FLATMIX)) {
+                    statusEl.textContent = '✅ 數據庫狀態正常 (FlatMixStore 已就緒)';
+                    statusEl.className = 'db-status success';
+                } else {
+                    statusEl.textContent = '⚠️ FlatMixStore 不存在，請點擊「修復數據庫」';
+                    statusEl.className = 'db-status warning';
+                }
+                db.close();
+                return true;
+            } catch (e) {
+                statusEl.textContent = '❌ 數據庫錯誤: ' + e.message;
+                statusEl.className = 'db-status error';
+                return false;
+            }
+        }
+
+        // 修復數據庫
+        async function fixDatabase() {
+            if (!confirm("此操作將刪除所有 Flat Mix 數據並重建數據庫，確定繼續嗎？")) return;
+            
+            const statusEl = document.getElementById('dbStatus');
+            statusEl.textContent = '⏳ 正在修復數據庫...';
+            statusEl.className = 'db-status warning';
+            
+            try {
+                const db = await openDB();
+                db.close();
+                
+                await new Promise((resolve, reject) => {
+                    const req = indexedDB.deleteDatabase(DB_NAME);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+                
+                const newDb = await openDB();
+                newDb.close();
+                
+                flatMixData = [];
+                document.getElementById('flatMixUploadBox').style.display = 'block';
+                document.getElementById('resetFlatMixBtn').style.display = 'none';
+                document.getElementById('flatMixStatus').textContent = '📎 未上傳';
+                document.getElementById('flatMixStatus').className = 'save-status';
+                document.getElementById('flatMixFile').value = '';
+                document.getElementById('flatMixError').style.display = 'none';
+                
+                statusEl.textContent = '✅ 數據庫已重建成功！請重新上載 Flat Mix Excel';
+                statusEl.className = 'db-status success';
+                alert('✅ 數據庫已成功修復！請重新上載 Flat Mix Excel。');
+                
+            } catch (e) {
+                statusEl.textContent = '❌ 修復失敗: ' + e.message;
+                statusEl.className = 'db-status error';
+                alert('❌ 修復失敗，請嘗試清除瀏覽器數據。\n錯誤: ' + e.message);
+            }
+        }
+
         async function saveDataToDB(storeName, dataId, data) {
             try {
                 const db = await openDB();
@@ -202,8 +304,8 @@
                     const tx = db.transaction([storeName], "readwrite");
                     const store = tx.objectStore(storeName);
                     store.put({ id: dataId, data: data });
-                    tx.oncomplete = resolve;
-                    tx.onerror = reject;
+                    tx.oncomplete = () => { db.close(); resolve(); };
+                    tx.onerror = () => { db.close(); reject(tx.error); };
                 });
             } catch(e) {
                 console.error("DB Save Error", e);
@@ -218,8 +320,8 @@
                     const tx = db.transaction([storeName], "readonly");
                     const store = tx.objectStore(storeName);
                     const req = store.get(dataId);
-                    req.onsuccess = () => resolve(req.result ? req.result.data : null);
-                    req.onerror = reject;
+                    req.onsuccess = () => { db.close(); resolve(req.result ? req.result.data : null); };
+                    req.onerror = () => { db.close(); reject(req.error); };
                 });
             } catch(e) {
                 console.error("DB Load Error", e);
@@ -254,12 +356,20 @@
                     if (db.objectStoreNames.contains(STORE_FLATMIX)) {
                         const tx = db.transaction([STORE_FLATMIX], "readwrite");
                         tx.objectStore(STORE_FLATMIX).delete("flatMixData");
+                        tx.oncomplete = () => { db.close(); };
+                    } else {
+                        db.close();
                     }
                 } catch(e) {}
+                
+                checkDBStatus();
             }
         }
 
         window.onload = async function() {
+            // 檢查數據庫狀態
+            await checkDBStatus();
+            
             try {
                 const saved = await loadDataFromDB(STORE_FLATMIX, "flatMixData");
                 if (saved && saved.length > 0) {
@@ -271,7 +381,9 @@
                     updateUploadStatus('📎 未上傳', false);
                 }
             } catch(e) {
-                updateUploadStatus('⚠️ 讀取失敗，請重新上載', false);
+                updateUploadStatus('⚠️ 讀取失敗，請點擊「修復數據庫」後重新上載', false);
+                document.getElementById('flatMixError').textContent = '錯誤: ' + e.message;
+                document.getElementById('flatMixError').style.display = 'block';
             }
 
             // 載入語言偏好
@@ -290,7 +402,6 @@
                 return;
             }
 
-            // 檢查檔案類型
             const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'];
             if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
                 errorEl.textContent = '❌ 請上載 .xlsx, .xls 或 .csv 格式檔案';
@@ -310,6 +421,7 @@
                     updateUploadStatus('✅ 已載入 ' + flatMixData.length + ' 筆數據', true);
                     document.getElementById('flatMixUploadBox').style.display = 'none';
                     document.getElementById('resetFlatMixBtn').style.display = 'inline-block';
+                    checkDBStatus();
                     alert('✅ Flat Mix 數據上載成功！');
                 } catch(err) {
                     updateUploadStatus('❌ 格式錯誤', false);
