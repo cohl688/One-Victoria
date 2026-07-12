@@ -51,6 +51,71 @@
         .hr-body .hr-unit-row {
             touch-action: none;
         }
+        /* 手機上載按鈕加大 */
+        .hr-body .file-upload-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .hr-body .file-upload-wrapper input[type="file"] {
+            padding: 12px 10px;
+            font-size: 15px;
+            border: 2px dashed var(--cohl-border);
+            border-radius: 6px;
+            background: var(--cohl-card-bg);
+            cursor: pointer;
+            width: 100%;
+            min-height: 50px;
+        }
+        .hr-body .file-upload-wrapper input[type="file"]:hover {
+            border-color: var(--cohl-red);
+        }
+        .hr-body .file-upload-wrapper .upload-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .hr-body .file-upload-wrapper .upload-actions button {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .hr-body .file-upload-wrapper .upload-actions .btn-upload {
+            background: var(--cohl-red);
+            color: #fff;
+        }
+        .hr-body .file-upload-wrapper .upload-actions .btn-upload:hover {
+            background: #cc0010;
+        }
+        .hr-body .file-upload-wrapper .upload-actions .btn-reset {
+            background: #d9534f;
+            color: #fff;
+        }
+        .hr-body .file-upload-wrapper .upload-actions .btn-reset:hover {
+            background: #c9302c;
+        }
+        @media (max-width: 480px) {
+            .hr-body .file-upload-wrapper .upload-actions {
+                flex-direction: column;
+            }
+            .hr-body .file-upload-wrapper .upload-actions button {
+                min-width: unset;
+                width: 100%;
+                padding: 12px;
+            }
+            .hr-body .file-upload-wrapper input[type="file"] {
+                padding: 16px 10px;
+                font-size: 16px;
+                min-height: 60px;
+            }
+        }
     </style>
 </head>
 <body class="hr-body">
@@ -101,12 +166,19 @@
         <h2>📋 人力資源 & 綜合管理</h2>
 
         <div id="globalUpload" class="hr-section" style="border-left-color: #333; background: #f0f0f0;">
-            <label id="rosterUploadLabel">📂 首次設定：上載更表 Excel (.xlsx) [灣畔/雙鑽/HR共用]</label>
-            <div class="hr-flex-row" id="rosterUploadRow">
+            <label id="rosterUploadLabel">📂 更表 Excel 設定</label>
+            
+            <!-- 上傳區域（手機版加大 touch 範圍） -->
+            <div class="file-upload-wrapper" id="rosterUploadRow">
                 <input type="file" id="excelFile" accept=".xlsx, .xls">
+                <div class="upload-actions">
+                    <button class="btn-upload" onclick="triggerFileUpload()">📤 選擇檔案上載</button>
+                    <button class="btn-reset" onclick="resetRoster()">🔄 清除數據重新上載</button>
+                </div>
             </div>
+            
             <div id="uploadStatus" style="color:#d9534f; font-size:0.85em; margin-top:5px; font-weight:bold;">⚠️ 未讀取更表數據</div>
-            <button id="resetRosterBtn" onclick="resetRoster()" style="display:none; margin-top:10px; background:#d9534f; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold;">🔄 清除更表並重新上載</button>
+            <div id="uploadError" style="color:#d9534f; font-size:0.8em; margin-top:4px; display:none;"></div>
         </div>
 
         <div class="hr-tabs">
@@ -317,16 +389,26 @@
         function resetRoster() {
             if(confirm("確定要清除現有更表數據並重新上載嗎？")) {
                 rosterData = [];
-                document.getElementById('rosterUploadRow').style.display = 'block';
-                document.getElementById('resetRosterBtn').style.display = 'none';
-                document.getElementById('uploadStatus').innerText = "⚠️ 數據已清除，請重新上載";
+                document.getElementById('uploadStatus').innerText = "⚠️ 數據已清除，請重新選擇檔案上載";
                 document.getElementById('uploadStatus').style.color = "#d9534f";
-                document.getElementById('rosterUploadLabel').innerText = "📂 首次設定：上載更表 Excel (.xlsx) [灣畔/雙鑽/HR共用]";
+                document.getElementById('uploadError').style.display = 'none';
+                // 清空 file input
+                document.getElementById('excelFile').value = '';
                 openDB().then(db => {
                     const tx = db.transaction([STORE_ROSTER], "readwrite");
                     tx.objectStore(STORE_ROSTER).delete("rosterData");
                 });
+                // 重置下拉選單
+                document.getElementById('hrEmployeeSelect').innerHTML = '<option value="">-- 請先上載 Excel --</option>';
+                // 清空結果
+                document.getElementById('vvResultMessage').value = '請先上載 Excel...';
+                document.getElementById('tvResultMessage').value = '請先上載 Excel...';
             }
+        }
+
+        // 手機觸發 file input
+        function triggerFileUpload() {
+            document.getElementById('excelFile').click();
         }
 
         let rosterData = []; 
@@ -373,16 +455,16 @@
             const savedRoster = await loadDataFromDB(STORE_ROSTER, "rosterData");
             if (savedRoster && savedRoster.length > 0) {
                 rosterData = savedRoster;
-                document.getElementById('uploadStatus').innerText = `✅ 更表數據庫已永久內置`;
+                document.getElementById('uploadStatus').innerText = `✅ 更表數據庫已永久內置 (${rosterData.length} 行數據)`;
                 document.getElementById('uploadStatus').style.color = "#28a745";
-                document.getElementById('rosterUploadRow').style.display = 'none'; 
-                document.getElementById('resetRosterBtn').style.display = 'inline-block'; 
-                document.getElementById('rosterUploadLabel').innerText = "📂 更表數據庫狀態";
                 
                 if (rosterData[1] && rosterData[1][0]) { const match = rosterData[1][0].match(/(\d{4})年(\d{1,2})月份/); if (match) { rosterYear = match[1]; rosterMonth = match[2]; daysInMonth = new Date(rosterYear, rosterMonth, 0).getDate(); } }
                 populateEmployeeDropdown(); 
                 generateMessage('vv'); 
                 generateMessage('tv'); 
+            } else {
+                document.getElementById('uploadStatus').innerText = "⚠️ 未讀取更表數據，請上載 Excel";
+                document.getElementById('uploadStatus').style.color = "#d9534f";
             }
             
             updateHolidayHint('vv');
@@ -397,7 +479,6 @@
             document.querySelectorAll('.hr-tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.hr-tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active'); btn.classList.add('active');
-            document.getElementById('globalUpload').style.display = 'block';
         }
 
         function loadSettings() {
@@ -512,32 +593,58 @@
             setTimeout(() => { badge.style.display = 'none'; }, 2000);
         }
 
-        // ===== Excel 讀取 =====
+        // ===== Excel 讀取（修正手機版） =====
         document.getElementById('excelFile').addEventListener('change', function(e) {
-            const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
+            const file = e.target.files[0];
+            const errorEl = document.getElementById('uploadError');
+            errorEl.style.display = 'none';
+            
+            if (!file) {
+                errorEl.textContent = '❌ 未選擇檔案';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            // 檢查檔案類型
+            const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'];
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+                errorEl.textContent = '❌ 請上載 .xlsx, .xls 或 .csv 格式檔案';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            const reader = new FileReader();
+            document.getElementById('uploadStatus').innerText = `🔄 正在讀取檔案...`;
+            document.getElementById('uploadStatus').style.color = "#d4af37";
+            
             reader.onload = async function(e) {
                 try {
-                    document.getElementById('uploadStatus').innerText = `🔄 正在寫入更表數據庫，請稍候...`;
-                    document.getElementById('uploadStatus').style.color = "#d4af37";
+                    const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                    rosterData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                    await saveDataToDB(STORE_ROSTER, "rosterData", rosterData);
                     
-                    setTimeout(async () => {
-                        const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-                        rosterData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-                        await saveDataToDB(STORE_ROSTER, "rosterData", rosterData);
-                        
-                        document.getElementById('uploadStatus').innerText = `✅ 更表數據已成功永久內置！以後無需再上載。`; 
-                        document.getElementById('uploadStatus').style.color = "#28a745";
-                        document.getElementById('rosterUploadRow').style.display = 'none';
-                        document.getElementById('resetRosterBtn').style.display = 'inline-block';
-                        document.getElementById('rosterUploadLabel').innerText = "📂 更表數據庫狀態";
-                        
-                        if (rosterData[1] && rosterData[1][0]) { const match = rosterData[1][0].match(/(\d{4})年(\d{1,2})月份/); if (match) { rosterYear = match[1]; rosterMonth = match[2]; daysInMonth = new Date(rosterYear, rosterMonth, 0).getDate(); } }
-                        populateEmployeeDropdown(); 
-                        generateMessage('vv'); 
-                        generateMessage('tv'); 
-                    }, 100);
-                } catch (error) { document.getElementById('uploadStatus').innerText = "❌ 格式錯誤"; document.getElementById('uploadStatus').style.color = "#d9534f"; }
-            }; reader.readAsArrayBuffer(file);
+                    document.getElementById('uploadStatus').innerText = `✅ 更表數據已成功永久內置！(${rosterData.length} 行數據)`;
+                    document.getElementById('uploadStatus').style.color = "#28a745";
+                    
+                    if (rosterData[1] && rosterData[1][0]) { const match = rosterData[1][0].match(/(\d{4})年(\d{1,2})月份/); if (match) { rosterYear = match[1]; rosterMonth = match[2]; daysInMonth = new Date(rosterYear, rosterMonth, 0).getDate(); } }
+                    populateEmployeeDropdown(); 
+                    generateMessage('vv'); 
+                    generateMessage('tv');
+                    alert('✅ 更表上載成功！');
+                } catch (error) {
+                    document.getElementById('uploadStatus').innerText = "❌ 讀取失敗";
+                    document.getElementById('uploadStatus').style.color = "#d9534f";
+                    errorEl.textContent = '❌ ' + error.message;
+                    errorEl.style.display = 'block';
+                }
+            };
+            reader.onerror = function() {
+                document.getElementById('uploadStatus').innerText = "❌ 讀取失敗";
+                document.getElementById('uploadStatus').style.color = "#d9534f";
+                errorEl.textContent = '❌ 無法讀取檔案，請確認檔案是否損毀';
+                errorEl.style.display = 'block';
+            };
+            reader.readAsArrayBuffer(file);
         });
 
         // ===== HR 出勤表 =====
