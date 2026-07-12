@@ -1,8 +1,9 @@
-const CACHE_NAME = 'cohl-sales-tech-v8';
+const CACHE_NAME = 'cohl-sales-tech-v9';
 const ASSETS_TO_CACHE = [
   './index.html',
   './style.css',
   './hr_management.html',
+  './runway_report.html',
   './VD_Sales.html',
   './V1_Sales.html',
   './VV_Sales.html',

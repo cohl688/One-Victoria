@@ -25,7 +25,6 @@
         </a>
         <div class="nav-links">
             <a href="./index.html">主頁</a>
-            
             <div class="dropdown active">
                 <span class="dropdown-toggle">住宅</span>
                 <div class="dropdown-menu">
@@ -34,7 +33,6 @@
                     <a href="./VV_Sales.html" class="active-drop">維港灣畔</a>
                 </div>
             </div>
-            
             <div class="dropdown">
                 <span class="dropdown-toggle">車位</span>
                 <div class="dropdown-menu">
@@ -43,7 +41,12 @@
                     <a href="./VVCP_Sales.html">維港灣畔車位</a>
                 </div>
             </div>
-            
+            <div class="dropdown">
+                <span class="dropdown-toggle">使用小工具</span>
+                <div class="dropdown-menu">
+                    <a href="./runway_report.html">📊 報每日跑道區成交</a>
+                </div>
+            </div>
             <a href="./hr_management.html">人力資源</a>
         </div>
         <button class="theme-toggle" id="themeToggle" aria-label="切換深色模式">
@@ -509,7 +512,15 @@
                 e.preventDefault();
                 var parent = this.closest('.dropdown');
                 if (parent) {
-                    parent.classList.toggle('active');
+                    parent.classList.toggle('open');
+                }
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            document.querySelectorAll('.dropdown.open').forEach(function(dropdown) {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
                 }
             });
         });

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#e60012">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="跑道區成交">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>跑道區成交 - 報數系統</title>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <a href="./index.html" class="logo">
+            <img src="./cohl-logo.png" alt="CHINA OVERSEAS Logo">
+            <span class="logo-text">CHINA OVERSEAS <small>Sales System</small></span>
+        </a>
+        <div class="nav-links">
+            <a href="./index.html">主頁</a>
+            <div class="dropdown">
+                <span class="dropdown-toggle">住宅</span>
+                <div class="dropdown-menu">
+                    <a href="./V1_Sales.html">維港1號</a>
+                    <a href="./VD_Sales.html">維港雙鑽</a>
+                    <a href="./VV_Sales.html">維港灣畔</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <span class="dropdown-toggle">車位</span>
+                <div class="dropdown-menu">
+                    <a href="./OVCP_Sales.html">維港1號車位</a>
+                    <a href="./TVCP_Sales.html">維港雙鑽車位</a>
+                    <a href="./VVCP_Sales.html">維港灣畔車位</a>
+                </div>
+            </div>
+            <div class="dropdown open">
+                <span class="dropdown-toggle">使用小工具</span>
+                <div class="dropdown-menu">
+                    <a href="./runway_report.html" class="active-drop">📊 報每日跑道區成交</a>
+                </div>
+            </div>
+            <a href="./hr_management.html">人力資源</a>
+        </div>
+        <button class="theme-toggle" id="themeToggle" aria-label="切換深色模式">
+            <span id="themeIcon">🌙</span>
+            <span class="toggle-label" id="themeLabel">深色</span>
+        </button>
+    </nav>
+
+    <div class="runway-container">
+        <h2>📊 跑道區成交過濾器</h2>
+
+        <div class="card">
+            <div class="section-title">
+                <span>📂 Flat Mix 數據庫</span>
+                <span class="save-status" id="flatMixStatus">📎 未上傳</span>
+            </div>
+            <div class="upload-box" id="flatMixUploadBox">
+                <label>首次設定：上載跑道區 Flat Mix Excel</label>
+                <input type="file" id="flatMixFile" accept=".xlsx, .xls">
+            </div>
+            <button id="resetFlatMixBtn" onclick="resetFlatMix()" style="display:none; margin-top:10px; background:#d9534f; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold;">🔄 清除數據並重新上載</button>
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                <span>📝 貼上代理 WhatsApp 原始成交訊息</span>
+            </div>
+            <textarea id="rawTransactions" style="height: 150px;" placeholder="請在此貼上完整訊息..."></textarea>
+            <button class="btn" style="margin-top:10px;" onclick="filterTransactions()">🔍 立即過濾跑道區成交</button>
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                <span>✅ 過濾結果（已自動重算並優先完美配對）</span>
+            </div>
+            <textarea id="filteredTransactions" class="result-area" readonly placeholder="過濾後的結果會在此顯示..."></textarea>
+            <button class="btn" style="margin-top:10px;" onclick="copyToClipboard('filteredTransactions')">📋 複製結果</button>
+        </div>
+    </div>
+
+    <footer class="footer" style="margin-top:20px;">
+        <div class="footer-inner">
+            <div class="footer-links">
+                <a href="./index.html">主頁</a>
+                <a href="https://www.cohl.com/en/" target="_blank">官方網站</a>
+            </div>
+            <div class="footer-copy">© 2026 CHINA OVERSEAS HOLDINGS LIMITED.</div>
+        </div>
+    </footer>
+
+    <script>
+        // ==========================================
+        // IndexedDB 儲存（獨立但共用）
+        // ==========================================
+        const DB_NAME = "ColiAppDB";
+        const STORE_FLATMIX = "FlatMixStore";
+        const DB_VERSION = 2;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_FLATMIX)) db.createObjectStore(STORE_FLATMIX, { keyPath: "id" });
+                };
+                req.onsuccess = (e) => resolve(e.target.result);
+                req.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function saveDataToDB(storeName, dataId, data) {
+            try {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction([storeName], "readwrite");
+                    const store = tx.objectStore(storeName);
+                    store.put({ id: dataId, data: data });
+                    tx.oncomplete = resolve;
+                    tx.onerror = reject;
+                });
+            } catch(e) { console.error("DB Save Error", e); }
+        }
+
+        async function loadDataFromDB(storeName, dataId) {
+            try {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction([storeName], "readonly");
+                    const store = tx.objectStore(storeName);
+                    const req = store.get(dataId);
+                    req.onsuccess = () => resolve(req.result ? req.result.data : null);
+                    req.onerror = reject;
+                });
+            } catch(e) { console.error("DB Load Error", e); return null; }
+        }
+
+        // ==========================================
+        // 核心邏輯
+        // ==========================================
+        let flatMixData = [];
+
+        function updateUploadStatus(message, isSaved) {
+            const el = document.getElementById('flatMixStatus');
+            if (el) {
+                el.textContent = message;
+                el.className = 'save-status' + (isSaved ? ' saved' : '');
+            }
+        }
+
+        async function resetFlatMix() {
+            if (confirm("確定要清除現有 Flat Mix 數據並重新上載嗎？")) {
+                flatMixData = [];
+                document.getElementById('flatMixUploadBox').style.display = 'block';
+                document.getElementById('resetFlatMixBtn').style.display = 'none';
+                updateUploadStatus('📎 未上傳', false);
+                
+                const db = await openDB();
+                const tx = db.transaction([STORE_FLATMIX], "readwrite");
+                tx.objectStore(STORE_FLATMIX).delete("flatMixData");
+            }
+        }
+
+        window.onload = async function() {
+            const saved = await loadDataFromDB(STORE_FLATMIX, "flatMixData");
+            if (saved && saved.length > 0) {
+                flatMixData = saved;
+                updateUploadStatus('✅ 已載入 ' + flatMixData.length + ' 筆數據', true);
+                document.getElementById('flatMixUploadBox').style.display = 'none';
+                document.getElementById('resetFlatMixBtn').style.display = 'inline-block';
+            }
+        };
+
+        document.getElementById('flatMixFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    updateUploadStatus('🔄 處理中...', false);
+                    const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                    flatMixData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                    await saveDataToDB(STORE_FLATMIX, "flatMixData", flatMixData);
+                    updateUploadStatus('✅ 已載入 ' + flatMixData.length + ' 筆數據', true);
+                    document.getElementById('flatMixUploadBox').style.display = 'none';
+                    document.getElementById('resetFlatMixBtn').style.display = 'inline-block';
+                } catch(err) {
+                    updateUploadStatus('❌ 格式錯誤', false);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // ===== 跑道區成交過濾 =====
+        const RUNWAY_KEYWORDS = {
+            "維港1號": "OV", "維港一號": "OV",
+            "啟德海灣": "KTM", "啟德海灣(I)": "KTM", "啟德海灣(II)": "KTM",
+            "柏蔚森": "PF",
+            "MIAMIQUAY": "MQ", "MIAMIQUAY(I)": "MQ", "MIAMIQUAY(II)": "MQ",
+            "DOUBLECOAST": "DC", "DOUBLECOAST(I)": "DC", "DOUBLECOAST(III)": "DC",
+            "維港．雙鑽": "TV", "維港·雙鑽": "TV", "維港‧雙鑽": "TV", "維港雙鑽": "TV",
+            "天璽．海": "CH", "天璽·海": "CH", "天璽‧海": "CH", "天璽海": "CH",
+            "天璽．海(I)": "CH", "天璽·海(I)": "CH", "天璽‧海(I)": "CH", "天璽海(I)": "CH",
+            "天璽．海2B": "CH", "天璽·海2B": "CH", "天璽‧海2B": "CH", "天璽海2B": "CH",
+            "天璽．海2A": "CH", "天璽·海2A": "CH", "天璽‧海2A": "CH", "天璽海2A": "CH",
+            "天瀧": "TK",
+            "澐璟": "PANO",
+            "維港．灣畔": "VV", "維港·灣畔": "VV", "維港‧灣畔": "VV", "維港灣畔": "VV",
+            "VICTORIABLOSSOM": "VB"
+        };
+
+        function normalizeUnit(s) {
+            s = s.toUpperCase().replace(/\s+/g, '');
+            if (s.includes('-')) {
+                let parts = s.split('-');
+                if (parts.length >= 3) {
+                    if (/^[A-Z]+$/.test(parts[1]) && /^\d+[A-Z]?$/.test(parts[2])) {
+                        s = parts[0] + parts[2] + parts[1];
+                    }
+                }
+            } else {
+                let match = s.match(/^(\d+[A-Z]?|[A-Z]+\d+)([A-Z]+)(\d+[A-Z]?)$/);
+                if (match) { s = match[1] + match[3] + match[2]; }
+            }
+            return s.replace(/[^A-Z0-9]/g, '');
+        }
+
+        function searchFlatMix(projectCode, cleanUnit) {
+            if (!flatMixData || flatMixData.length === 0 || !cleanUnit) return null;
+            let fallbackMatch = null;
+            for (let i = 1; i < flatMixData.length; i++) {
+                let row = flatMixData[i];
+                if (!row || row.length < 12) continue;
+                let rowCode = (row[0] || "").toString().toUpperCase().trim();
+                if (rowCode === projectCode) {
+                    let csvUnitRaw = (row[1] || "").toString().toUpperCase();
+                    let cleanCSV = csvUnitRaw.replace(/[^A-Z0-9]/g, '');
+                    let layout = row[9] || "未知戶型";
+                    let view = row[11] || "未知景觀";
+                    let result = `（${view}--${layout}）`;
+                    if (cleanCSV === cleanUnit) { return result; }
+                    if (!fallbackMatch) {
+                        if (cleanCSV.endsWith(cleanUnit) && cleanCSV.length - cleanUnit.length <= 2) {
+                            fallbackMatch = result;
+                        } else if (cleanCSV.includes(cleanUnit) && cleanCSV.length - cleanUnit.length <= 2) {
+                            fallbackMatch = result;
+                        }
+                    }
+                }
+            }
+            return fallbackMatch;
+        }
+
+        function filterTransactions() {
+            const rawText = document.getElementById('rawTransactions').value;
+            if (!rawText.trim()) {
+                alert("請先貼上原始成交訊息！");
+                return;
+            }
+            
+            if (flatMixData.length === 0) {
+                alert("⚠️ 請先上載 Flat Mix Excel！");
+                return;
+            }
+
+            const separator = "🔸🔹🔸🔹🔸🔹";
+            const blocks = rawText.split(/🔸🔹🔸🔹🔸🔹/);
+            if (blocks.length < 2) {
+                alert("未能偵測到分隔線(🔸🔹🔸🔹🔸🔹)，請確保貼上完整訊息。");
+                return;
+            }
+
+            const header = blocks.shift();
+            let dateStr = "今日";
+            const dateMatch = header.match(/(.*?)(一手市場成交|一手成交).*?[:：]\s*\(\d+\)/) || header.match(/(.*?)(一手市場成交|一手成交)/);
+            if (dateMatch) { dateStr = dateMatch[1].trim(); }
+
+            let validBlocks = [];
+            let totalCount = 0;
+
+            blocks.forEach(block => {
+                if (!block.trim()) return;
+                let lines = block.split('\n').map(l => l.trim()).filter(l => l);
+                if (lines.length === 0) return;
+
+                let projLine = lines[0];
+                let upperProj = projLine.toUpperCase().replace(/\s+/g, '');
+                let projectCode = null;
+                for (const [key, code] of Object.entries(RUNWAY_KEYWORDS)) {
+                    if (upperProj.includes(key)) { projectCode = code; break; }
+                }
+
+                if (projectCode) {
+                    let agencies = [];
+                    let currentAgency = null;
+                    let standaloneUnits = [];
+
+                    for (let i = 1; i < lines.length; i++) {
+                        let line = lines[i];
+                        let agencyMatch = line.match(/^(.*?)([:：])\s*(\d+)\s*$/);
+                        if (agencyMatch && !line.includes('(') && !line.includes('（')) {
+                            currentAgency = { prefix: agencyMatch[1], colon: agencyMatch[2], units: [] };
+                            agencies.push(currentAgency);
+                        } else {
+                            if (currentAgency) {
+                                currentAgency.units.push(line);
+                            } else {
+                                standaloneUnits.push(line);
+                            }
+                        }
+                    }
+
+                    let processedStandalone = [];
+                    let projectUnitCount = 0;
+
+                    const processUnit = (line) => {
+                        projectUnitCount++;
+                        let cleanLine = line.replace(/[期座室樓層]/g, '');
+                        let prefix = cleanLine.split(/[\u4e00-\u9fa5]/)[0];
+                        let rawUnitToken = prefix.trim().split(/\s+/)[0];
+                        let unitToken = normalizeUnit(rawUnitToken);
+                        let info = searchFlatMix(projectCode, unitToken);
+                        return info ? `${line} ${info}` : line;
+                    };
+
+                    standaloneUnits.forEach(u => processedStandalone.push(processUnit(u)));
+
+                    agencies.forEach(ag => {
+                        let processed = [];
+                        ag.units.forEach(u => processed.push(processUnit(u)));
+                        ag.processedUnits = processed;
+                        ag.actualCount = ag.units.length;
+                    });
+
+                    let origCountMatch = projLine.match(/[:：]\s*(\d+)/);
+                    let origCount = origCountMatch ? parseInt(origCountMatch[1], 10) : 0;
+                    let finalProjCount = projectUnitCount > 0 ? projectUnitCount : origCount;
+                    totalCount += finalProjCount;
+
+                    let newProjLine = projLine;
+                    if (projLine.match(/[:：]\s*\d+/)) {
+                        newProjLine = projLine.replace(/([:：]\s*)\d+/, `$1${finalProjCount}`);
+                    } else {
+                        newProjLine = `${projLine}：${finalProjCount}`;
+                    }
+
+                    let blockLines = [newProjLine, ...processedStandalone];
+                    agencies.forEach(ag => {
+                        if (ag.actualCount > 0) {
+                            blockLines.push(`${ag.prefix}${ag.colon}${ag.actualCount}`);
+                            blockLines.push(...ag.processedUnits);
+                        } else if (ag.actualCount === 0 && projectUnitCount === 0) {
+                            blockLines.push(`${ag.prefix}${ag.colon}${origCountMatch ? origCount : 1}`);
+                        }
+                    });
+
+                    validBlocks.push(blockLines.join('\n'));
+                }
+            });
+
+            let finalText = `${dateStr}一手跑道區成交：(${totalCount})\n${separator}\n`;
+            finalText += validBlocks.join(`\n${separator}\n`);
+            if (validBlocks.length > 0) { finalText += `\n${separator}`; }
+
+            document.getElementById('filteredTransactions').value = finalText;
+        }
+
+        function copyToClipboard(elementId) {
+            const t = document.getElementById(elementId);
+            if (!t.value || t.value.includes("請先上載") || t.value.includes("過濾後的結果")) {
+                alert("未能複製空內容");
+                return;
+            }
+            t.select();
+            t.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(t.value).then(() => alert("✅ 已複製")).catch(() => alert("請手動複製"));
+        }
+
+        // ===== Dark Mode =====
+        (function() {
+            const toggle = document.getElementById('themeToggle');
+            const icon = document.getElementById('themeIcon');
+            const label = document.getElementById('themeLabel');
+            const html = document.documentElement;
+
+            const savedTheme = localStorage.getItem('cohl-theme');
+            if (savedTheme === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+                icon.textContent = '☀️';
+                label.textContent = '淺色';
+            }
+
+            toggle.addEventListener('click', function() {
+                const isDark = html.getAttribute('data-theme') === 'dark';
+                if (isDark) {
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('cohl-theme', 'light');
+                    icon.textContent = '🌙';
+                    label.textContent = '深色';
+                } else {
+                    html.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('cohl-theme', 'dark');
+                    icon.textContent = '☀️';
+                    label.textContent = '淺色';
+                }
+            });
+        })();
+
+        // ===== 下拉菜單手機點擊支援（無 delay） =====
+        document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var parent = this.closest('.dropdown');
+                if (parent) {
+                    document.querySelectorAll('.dropdown.open').forEach(function(d) {
+                        if (d !== parent) d.classList.remove('open');
+                    });
+                    parent.classList.toggle('open');
+                }
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            document.querySelectorAll('.dropdown.open').forEach(function(dropdown) {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

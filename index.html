@@ -19,27 +19,35 @@
             <span class="logo-text">CHINA OVERSEAS <small>Sales System</small></span>
         </a>
         <div class="nav-links">
-            <a href="./index.html" class="active">主頁</a>
-            
+            <a href="./index.html" class="active" data-i18n="nav_home">主頁</a>
             <div class="dropdown">
-                <span class="dropdown-toggle">住宅</span>
+                <span class="dropdown-toggle" data-i18n="nav_residential">住宅</span>
                 <div class="dropdown-menu">
-                    <a href="./V1_Sales.html">維港1號</a>
-                    <a href="./VD_Sales.html">維港雙鑽</a>
-                    <a href="./VV_Sales.html">維港灣畔</a>
+                    <a href="./V1_Sales.html" data-i18n="nav_v1">維港1號</a>
+                    <a href="./VD_Sales.html" data-i18n="nav_vd">維港雙鑽</a>
+                    <a href="./VV_Sales.html" data-i18n="nav_vv">維港灣畔</a>
                 </div>
             </div>
-            
             <div class="dropdown">
-                <span class="dropdown-toggle">車位</span>
+                <span class="dropdown-toggle" data-i18n="nav_carpark">車位</span>
                 <div class="dropdown-menu">
-                    <a href="./OVCP_Sales.html">維港1號車位</a>
-                    <a href="./TVCP_Sales.html">維港雙鑽車位</a>
-                    <a href="./VVCP_Sales.html">維港灣畔車位</a>
+                    <a href="./OVCP_Sales.html" data-i18n="nav_ovcp">維港1號車位</a>
+                    <a href="./TVCP_Sales.html" data-i18n="nav_tvcp">維港雙鑽車位</a>
+                    <a href="./VVCP_Sales.html" data-i18n="nav_vvcp">維港灣畔車位</a>
                 </div>
             </div>
-            
-            <a href="./hr_management.html">人力資源</a>
+            <div class="dropdown">
+                <span class="dropdown-toggle" data-i18n="nav_tools">使用小工具</span>
+                <div class="dropdown-menu">
+                    <a href="./runway_report.html" data-i18n="nav_runway">📊 報每日跑道區成交</a>
+                </div>
+            </div>
+            <a href="./hr_management.html" data-i18n="nav_hr">人力資源</a>
+        </div>
+        <div class="lang-toggle">
+            <button class="active-lang" data-lang="zh-HK" onclick="switchLang('zh-HK')">繁</button>
+            <button data-lang="zh-CN" onclick="switchLang('zh-CN')">简</button>
+            <button data-lang="en" onclick="switchLang('en')">EN</button>
         </div>
         <button class="theme-toggle" id="themeToggle" aria-label="切換深色模式">
             <span id="themeIcon">🌙</span>
@@ -48,41 +56,41 @@
     </nav>
 
     <div class="hero">
-        <h1>Intelligent Sales System</h1>
-        <p>Property &amp; Carpark Performance Analytics</p>
+        <h1 data-i18n="hero_title">Intelligent Sales System</h1>
+        <p data-i18n="hero_sub">Property &amp; Carpark Performance Analytics</p>
     </div>
 
     <div class="portal-container">
         <div id="pwa-install-banner" onclick="installPWA()">📲 安裝系統至裝置（支援離線運算）</div>
 
-        <div class="section-header">Residential Properties（住宅項目）</div>
+        <div class="section-header" data-i18n="section_residential">Residential Properties（住宅項目）</div>
         <div class="grid-container">
             <a href="./VD_Sales.html" class="project-card">
-                <div class="card-content"><h2>維港·雙鑽</h2><p>Twin Victoria</p></div>
+                <div class="card-content"><h2 data-i18n="card_vd_title">維港·雙鑽</h2><p data-i18n="card_vd_sub">Twin Victoria</p></div>
                 <div class="arrow">→</div>
             </a>
             <a href="./V1_Sales.html" class="project-card">
-                <div class="card-content"><h2>維港 1 號</h2><p>One Victoria</p></div>
+                <div class="card-content"><h2 data-i18n="card_v1_title">維港 1 號</h2><p data-i18n="card_v1_sub">One Victoria</p></div>
                 <div class="arrow">→</div>
             </a>
             <a href="./VV_Sales.html" class="project-card">
-                <div class="card-content"><h2>維港·灣畔</h2><p>Victoria Voyage（綜合期數）</p></div>
+                <div class="card-content"><h2 data-i18n="card_vv_title">維港·灣畔</h2><p data-i18n="card_vv_sub">Victoria Voyage（綜合期數）</p></div>
                 <div class="arrow">→</div>
             </a>
         </div>
 
-        <div class="section-header">Carpark Properties（車位項目）</div>
+        <div class="section-header" data-i18n="section_carpark">Carpark Properties（車位項目）</div>
         <div class="grid-container">
             <a href="./TVCP_Sales.html" class="project-card">
-                <div class="card-content"><h2>維港·雙鑽（車位）</h2><p>TVCP</p></div>
+                <div class="card-content"><h2 data-i18n="card_tvcp_title">維港·雙鑽（車位）</h2><p data-i18n="card_tvcp_sub">TVCP</p></div>
                 <div class="arrow">→</div>
             </a>
             <a href="./OVCP_Sales.html" class="project-card">
-                <div class="card-content"><h2>維港 1 號（車位）</h2><p>OVCP</p></div>
+                <div class="card-content"><h2 data-i18n="card_ovcp_title">維港 1 號（車位）</h2><p data-i18n="card_ovcp_sub">OVCP</p></div>
                 <div class="arrow">→</div>
             </a>
             <a href="./VVCP_Sales.html" class="project-card">
-                <div class="card-content"><h2>維港·灣畔（車位）</h2><p>VVCP</p></div>
+                <div class="card-content"><h2 data-i18n="card_vvcp_title">維港·灣畔（車位）</h2><p data-i18n="card_vvcp_sub">VVCP</p></div>
                 <div class="arrow">→</div>
             </a>
         </div>
@@ -91,9 +99,9 @@
     <footer class="footer">
         <div class="footer-inner">
             <div class="footer-links">
-                <a href="./index.html">主頁</a>
-                <a href="https://www.cohl.com/en/" target="_blank">官方網站</a>
-                <a href="mailto:sales@cohl.com">聯絡我們</a>
+                <a href="./index.html" data-i18n="footer_home">主頁</a>
+                <a href="https://www.cohl.com/en/" target="_blank" data-i18n="footer_website">官方網站</a>
+                <a href="mailto:sales@cohl.com" data-i18n="footer_contact">聯絡我們</a>
             </div>
             <div class="footer-copy">
                 © 2026 CHINA OVERSEAS HOLDINGS LIMITED. ALL RIGHTS RESERVED.
@@ -119,6 +127,134 @@
             }
         }
 
+        // ===== 語言切換功能 =====
+        const translations = {
+            'zh-HK': {
+                'nav_home': '主頁',
+                'nav_residential': '住宅',
+                'nav_carpark': '車位',
+                'nav_tools': '使用小工具',
+                'nav_runway': '📊 報每日跑道區成交',
+                'nav_hr': '人力資源',
+                'nav_v1': '維港1號',
+                'nav_vd': '維港雙鑽',
+                'nav_vv': '維港灣畔',
+                'nav_ovcp': '維港1號車位',
+                'nav_tvcp': '維港雙鑽車位',
+                'nav_vvcp': '維港灣畔車位',
+                'hero_title': '智能銷售系統',
+                'hero_sub': '物業及車位表現分析',
+                'section_residential': 'Residential Properties（住宅項目）',
+                'section_carpark': 'Carpark Properties（車位項目）',
+                'card_vd_title': '維港·雙鑽',
+                'card_vd_sub': 'Twin Victoria',
+                'card_v1_title': '維港 1 號',
+                'card_v1_sub': 'One Victoria',
+                'card_vv_title': '維港·灣畔',
+                'card_vv_sub': 'Victoria Voyage（綜合期數）',
+                'card_tvcp_title': '維港·雙鑽（車位）',
+                'card_tvcp_sub': 'TVCP',
+                'card_ovcp_title': '維港 1 號（車位）',
+                'card_ovcp_sub': 'OVCP',
+                'card_vvcp_title': '維港·灣畔（車位）',
+                'card_vvcp_sub': 'VVCP',
+                'footer_home': '主頁',
+                'footer_website': '官方網站',
+                'footer_contact': '聯絡我們'
+            },
+            'zh-CN': {
+                'nav_home': '主页',
+                'nav_residential': '住宅',
+                'nav_carpark': '车位',
+                'nav_tools': '使用小工具',
+                'nav_runway': '📊 报每日跑道区成交',
+                'nav_hr': '人力资源',
+                'nav_v1': '维港1号',
+                'nav_vd': '维港双钻',
+                'nav_vv': '维港湾畔',
+                'nav_ovcp': '维港1号车位',
+                'nav_tvcp': '维港双钻车位',
+                'nav_vvcp': '维港湾畔车位',
+                'hero_title': '智能销售系统',
+                'hero_sub': '物业及车位表现分析',
+                'section_residential': 'Residential Properties（住宅项目）',
+                'section_carpark': 'Carpark Properties（车位项目）',
+                'card_vd_title': '维港·双钻',
+                'card_vd_sub': 'Twin Victoria',
+                'card_v1_title': '维港 1 号',
+                'card_v1_sub': 'One Victoria',
+                'card_vv_title': '维港·湾畔',
+                'card_vv_sub': 'Victoria Voyage（综合期数）',
+                'card_tvcp_title': '维港·双钻（车位）',
+                'card_tvcp_sub': 'TVCP',
+                'card_ovcp_title': '维港 1 号（车位）',
+                'card_ovcp_sub': 'OVCP',
+                'card_vvcp_title': '维港·湾畔（车位）',
+                'card_vvcp_sub': 'VVCP',
+                'footer_home': '主页',
+                'footer_website': '官方网站',
+                'footer_contact': '联系我们'
+            },
+            'en': {
+                'nav_home': 'Home',
+                'nav_residential': 'Residential',
+                'nav_carpark': 'Carpark',
+                'nav_tools': 'Tools',
+                'nav_runway': '📊 Daily Runway Transactions',
+                'nav_hr': 'HR',
+                'nav_v1': 'One Victoria',
+                'nav_vd': 'Twin Victoria',
+                'nav_vv': 'Victoria Voyage',
+                'nav_ovcp': 'One Victoria Carpark',
+                'nav_tvcp': 'Twin Victoria Carpark',
+                'nav_vvcp': 'Victoria Voyage Carpark',
+                'hero_title': 'Intelligent Sales System',
+                'hero_sub': 'Property & Carpark Performance Analytics',
+                'section_residential': 'Residential Properties',
+                'section_carpark': 'Carpark Properties',
+                'card_vd_title': 'Twin Victoria',
+                'card_vd_sub': 'Twin Victoria',
+                'card_v1_title': 'One Victoria',
+                'card_v1_sub': 'One Victoria',
+                'card_vv_title': 'Victoria Voyage',
+                'card_vv_sub': 'Victoria Voyage (Combined Phases)',
+                'card_tvcp_title': 'Twin Victoria (Carpark)',
+                'card_tvcp_sub': 'TVCP',
+                'card_ovcp_title': 'One Victoria (Carpark)',
+                'card_ovcp_sub': 'OVCP',
+                'card_vvcp_title': 'Victoria Voyage (Carpark)',
+                'card_vvcp_sub': 'VVCP',
+                'footer_home': 'Home',
+                'footer_website': 'Official Website',
+                'footer_contact': 'Contact Us'
+            }
+        };
+
+        function switchLang(lang) {
+            localStorage.setItem('cohl_lang', lang);
+            document.querySelectorAll('.lang-toggle button').forEach(btn => {
+                btn.classList.toggle('active-lang', btn.dataset.lang === lang);
+            });
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            // 更新 placeholder（如有）
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.dataset.i18nPlaceholder;
+                if (translations[lang] && translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
+        }
+
+        // 載入語言偏好
+        const savedLang = localStorage.getItem('cohl_lang') || 'zh-HK';
+        switchLang(savedLang);
+
+        // ===== Dark Mode =====
         (function() {
             const toggle = document.getElementById('themeToggle');
             const icon = document.getElementById('themeIcon');
@@ -148,12 +284,21 @@
             });
         })();
 
+        // ===== 下拉菜單 =====
         document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
             toggle.addEventListener('click', function(e) {
                 e.preventDefault();
                 var parent = this.closest('.dropdown');
                 if (parent) {
-                    parent.classList.toggle('active');
+                    parent.classList.toggle('open');
+                }
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            document.querySelectorAll('.dropdown.open').forEach(function(dropdown) {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
                 }
             });
         });
